@@ -1,0 +1,3 @@
+# NetScan v4 — no pip packages required.
+# System deps: sudo apt install nmap iproute2 network-manager
+

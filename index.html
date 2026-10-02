@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NetScan v4 — WiFi Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@300;400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════════
+   WHITE THEME — clean clinical intelligence dashboard
+══════════════════════════════════════════════════════════════ */
+:root {
+  --bg:          #edf0f4;
+  --surface:     #f4f6f9;
+  --surface2:    #e8ecf1;
+  --surface3:    #dde2ea;
+  --border:      #d0d5e0;
+  --border2:     #b8bfce;
+  --shadow-sm:   0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow:      0 2px 8px rgba(0,0,0,0.08), 0 4px 20px rgba(0,0,0,0.04);
+  --shadow-lg:   0 4px 16px rgba(0,0,0,0.1), 0 8px 32px rgba(0,0,0,0.06);
+
+  --text:        #111827;
+  --text2:       #374151;
+  --text3:       #6b7280;
+  --text4:       #9ca3af;
+
+  --accent:      #2563eb;
+  --accent-soft: #eff6ff;
+  --accent-mid:  #bfdbfe;
+
+  --green:       #059669;
+  --green-soft:  #ecfdf5;
+  --cyan:        #0891b2;
+  --amber:       #d97706;
+  --red:         #dc2626;
+  --red-soft:    #fef2f2;
+  --purple:      #7c3aed;
+
+  --mono: 'DM Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+  --head: 'Syne', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.5; }
+
+/* ── TOPBAR ─────────────────────────────────── */
+.topbar {
+  position: sticky; top: 0; z-index: 200;
+  background: rgba(237,240,244,0.95); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 0;
+  height: 54px; padding: 0 20px;
+  box-shadow: var(--shadow-sm);
+}
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo-icon {
+  width: 30px; height: 30px; background: var(--accent);
+  border-radius: 7px; display: flex; align-items: center;
+  justify-content: center; font-size: 15px; color: #fff;
+}
+.logo-text { font-family: var(--head); font-size: 1rem; font-weight: 800; color: var(--text); letter-spacing: 0.5px; }
+.logo-text span { color: var(--accent); }
+.logo-sub { font-family: var(--mono); font-size: 0.55rem; color: var(--text4); letter-spacing: 2px; text-transform: uppercase; display: block; margin-top: 1px; }
+.topbar-sep { width: 1px; height: 22px; background: var(--border); margin: 0 16px; }
+.t-stat { font-family: var(--mono); font-size: 0.63rem; color: var(--text3); }
+.t-stat b { color: var(--accent); }
+.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.live-badge {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--green-soft); border: 1px solid rgba(5,150,105,0.2);
+  border-radius: 20px; padding: 3px 9px;
+  font-family: var(--mono); font-size: 0.58rem; color: var(--green); letter-spacing: 1px; font-weight: 500;
+}
+.pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 1.4s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.25;transform:scale(0.55)} }
+.srv-badge { font-family: var(--mono); font-size: 0.6rem; color: var(--text3); }
+
+/* ── CONTROLS ────────────────────────────────── */
+.app { max-width: 1320px; margin: 0 auto; padding: 16px 20px 60px; }
+.ctrl-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 9px 14px; margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.btn-scan {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--accent); color: #fff; border: none; border-radius: 7px;
+  padding: 7px 16px; font-family: var(--mono); font-size: 0.68rem;
+  font-weight: 500; letter-spacing: 1px; text-transform: uppercase;
+  cursor: pointer; transition: background .15s, box-shadow .15s;
+}
+.btn-scan:hover:not(:disabled) { background: #1d4ed8; box-shadow: 0 4px 14px rgba(37,99,235,.35); }
+.btn-scan:disabled { opacity: .5; cursor: not-allowed; }
+.spin-icon { display: inline-block; }
+.btn-scan.scanning .spin-icon { animation: rot .7s linear infinite; }
+@keyframes rot { to { transform: rotate(360deg); } }
+.v-sep { width: 1px; height: 18px; background: var(--border); }
+.auto-wrap { display: flex; align-items: center; gap: 7px; cursor: pointer; user-select: none; font-family: var(--mono); font-size: 0.63rem; color: var(--text3); }
+.sw-track { width: 32px; height: 17px; border-radius: 9px; background: var(--border2); position: relative; transition: background .2s; flex-shrink: 0; }
+.sw-track.on { background: var(--accent); }
+.sw-knob { position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: left .2s; }
+.sw-track.on .sw-knob { left: 17px; }
+.cd-wrap { margin-left: auto; display: flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 0.62rem; color: var(--text3); }
+.cd-bar-bg { width: 56px; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.cd-bar-fg { height: 100%; background: var(--accent); transition: width .3s linear; border-radius: 2px; }
+#cd-val { color: var(--accent); font-weight: 600; min-width: 22px; text-align: right; }
+
+/* ── ALERTS ──────────────────────────────────── */
+.guide {
+  background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px;
+  padding: 14px 18px; margin-bottom: 14px; display: none;
+}
+.guide h3 { font-family: var(--mono); font-size: 0.72rem; color: #92400e; margin-bottom: 8px; letter-spacing: 1px; }
+.guide ol { padding-left: 18px; font-family: var(--mono); font-size: 0.7rem; color: #78350f; line-height: 2.2; }
+.guide code { background: rgba(180,120,0,.1); padding: 1px 5px; border-radius: 3px; }
+.err-bar { background: var(--red-soft); border: 1px solid rgba(220,38,38,.2); border-radius: 8px; padding: 7px 13px; margin-bottom: 12px; font-family: var(--mono); font-size: 0.7rem; color: var(--red); display: none; }
+
+/* ── HOST DISCOVERY BANNER ───────────────────── */
+.host-banner {
+  background: var(--accent-soft); border: 1px solid var(--accent-mid);
+  border-radius: 8px; padding: 10px 16px; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  font-family: var(--mono); font-size: 0.65rem; color: var(--accent);
+}
+.host-banner .hb-item { display: flex; align-items: center; gap: 5px; }
+.host-banner .hb-lbl { color: var(--text3); }
+.host-banner .hb-val { font-weight: 600; color: var(--accent); }
+
+/* ── LAYOUT ──────────────────────────────────── */
+.layout { display: grid; grid-template-columns: 290px 1fr; gap: 14px; align-items: start; }
+@media (max-width: 840px) { .layout { grid-template-columns: 1fr; } }
+
+/* ── PANEL ───────────────────────────────────── */
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; box-shadow: var(--shadow-sm); margin-bottom: 12px; }
+.panel:last-child { margin-bottom: 0; }
+.panel-head { display: flex; align-items: center; gap: 7px; padding: 9px 13px; border-bottom: 1px solid var(--border); font-family: var(--mono); font-size: 0.6rem; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; background: var(--surface2); }
+.ph-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.panel-body { padding: 12px; }
+
+/* Radar */
+.radar-ring { position: relative; width: 100%; padding-bottom: 100%; }
+.radar-ring canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* Legend */
+.leg-row { display: flex; align-items: center; gap: 7px; padding: 3px 0; border-bottom: 1px solid var(--border); }
+.leg-row:last-child { border-bottom: none; }
+.leg-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.leg-ssid { flex: 1; font-size: 0.7rem; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.leg-d { font-family: var(--mono); font-size: 0.6rem; color: var(--text4); }
+
+/* Channel chips */
+.ch-row { display: flex; flex-wrap: wrap; gap: 4px; }
+.ch-chip { font-family: var(--mono); font-size: 0.6rem; font-weight: 600; padding: 3px 8px; border-radius: 5px; border: 1px solid; }
+.ch-ok  { background: var(--green-soft); color: var(--green); border-color: rgba(5,150,105,.2); }
+.ch-mid { background: #fffbeb; color: var(--amber); border-color: rgba(217,119,6,.2); }
+.ch-jam { background: var(--red-soft); color: var(--red); border-color: rgba(220,38,38,.2); }
+
+/* ── CARDS ───────────────────────────────────── */
+#grid { display: flex; flex-direction: column; gap: 12px; }
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 11px; overflow: hidden;
+  box-shadow: var(--shadow-sm); transition: box-shadow .2s, border-color .2s;
+  animation: fadeUp .28s ease both;
+}
+@keyframes fadeUp { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+.card:hover { box-shadow: var(--shadow); border-color: var(--border2); }
+.card.connected { border-color: rgba(5,150,105,.35); box-shadow: 0 0 0 3px rgba(5,150,105,.07), var(--shadow-sm); }
+.signal-stripe { height: 3px; }
+.card.excellent .signal-stripe { background: linear-gradient(90deg,var(--green),#34d399); }
+.card.good      .signal-stripe { background: linear-gradient(90deg,var(--cyan),#22d3ee); }
+.card.fair      .signal-stripe { background: linear-gradient(90deg,var(--amber),#fbbf24); }
+.card.poor      .signal-stripe { background: linear-gradient(90deg,var(--red),#f87171); }
+
+.card-body { padding: 13px 15px 11px; }
+
+/* Card header */
+.card-hdr { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 9px; }
+.ssid-wrap { min-width: 0; }
+.ssid { font-family: var(--head); font-size: 1rem; font-weight: 700; color: var(--text); word-break: break-word; line-height: 1.25; }
+.ssid.hidden { color: var(--text3); font-style: italic; }
+.ssid.probed { color: var(--accent); }
+.ssid-sub { font-family: var(--mono); font-size: 0.57rem; color: var(--text4); margin-top: 3px; }
+
+/* Badge row */
+.badges { display: flex; flex-direction: column; gap: 3px; align-items: flex-end; flex-shrink: 0; }
+.badge { font-family: var(--mono); font-size: 0.52rem; font-weight: 600; padding: 2px 7px; border-radius: 4px; border: 1px solid; white-space: nowrap; letter-spacing: .3px; }
+.b-conn  { background: var(--green-soft); color: var(--green); border-color: rgba(5,150,105,.25); }
+.b-sec   { background: #eff6ff; color: var(--accent); border-color: rgba(37,99,235,.2); }
+.b-open  { background: var(--red-soft); color: var(--red); border-color: rgba(220,38,38,.2); }
+.b-wpa3  { background: var(--green-soft); color: var(--green); border-color: rgba(5,150,105,.3); }
+.b-freq  { background: var(--surface3); color: var(--text2); border-color: var(--border); }
+.b-bw    { background: #f5f3ff; color: var(--purple); border-color: rgba(124,58,237,.18); }
+.b-hidden{ background: var(--surface3); color: var(--text3); border-color: var(--border); }
+.b-risk-c{ background: #fff1f2; color: #be123c; border-color: rgba(190,18,60,.2); }
+.b-risk-h{ background: var(--red-soft); color: var(--red); border-color: rgba(220,38,38,.2); }
+.b-risk-m{ background: #fffbeb; color: var(--amber); border-color: rgba(217,119,6,.2); }
+.b-risk-l{ background: var(--green-soft); color: var(--green); border-color: rgba(5,150,105,.2); }
+
+/* Info row */
+.info-row {
+  display: flex; flex-wrap: wrap; gap: 5px; align-items: center;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 7px;
+  padding: 7px 11px; margin-bottom: 10px;
+  font-family: var(--mono); font-size: 0.6rem;
+}
+.itag { display: flex; align-items: center; gap: 3px; }
+.itag .l { color: var(--text4); }
+.itag .v { color: var(--text2); font-weight: 500; }
+.itag .v.ip { color: var(--accent); font-weight: 700; font-size: 0.65rem; }
+.itag .v.host { color: var(--cyan); }
+.isep { color: var(--border2); }
+.os-tag { background: #f5f3ff; color: var(--purple); border: 1px solid rgba(124,58,237,.15); padding: 1px 7px; border-radius: 10px; font-size: 0.56rem; }
+.no-ip-note { font-family: var(--mono); font-size: 0.58rem; color: var(--text4); font-style: italic; }
+
+/* Metrics */
+.metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; margin-bottom: 9px; }
+.mbox { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 7px 9px; }
+.mbox label { display: block; font-family: var(--mono); font-size: 0.5rem; letter-spacing: 1.5px; color: var(--text4); text-transform: uppercase; margin-bottom: 3px; }
+.mval { font-family: var(--mono); font-size: 0.98rem; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+.mval sub { font-size: 0.48rem; font-weight: 400; color: var(--text4); }
+.card.excellent .mval { color: var(--green); }
+.card.good      .mval { color: var(--cyan); }
+.card.fair      .mval { color: var(--amber); }
+.card.poor      .mval { color: var(--red); }
+.mbar { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 2px; }
+.mbar-f { height: 100%; border-radius: 2px; transition: width .8s cubic-bezier(.25,.46,.45,.94); }
+.card.excellent .mbar-f { background: var(--green); }
+.card.good      .mbar-f { background: var(--cyan); }
+.card.fair      .mbar-f { background: var(--amber); }
+.card.poor      .mbar-f { background: var(--red); }
+.mbar-lbl { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.47rem; color: var(--text4); }
+
+/* Sparkline */
+.spark-wrap { margin-bottom: 9px; }
+.spark-lbl { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.5rem; color: var(--text4); margin-bottom: 3px; letter-spacing: 1px; text-transform: uppercase; }
+.spark-cv { width: 100%; height: 34px; display: block; border-radius: 5px; border: 1px solid var(--border); }
+
+/* ── PORTS PANEL ─────────────────────────────── */
+.ports-wrap { border: 1px solid var(--border); border-radius: 7px; overflow: hidden; margin-bottom: 9px; }
+.ports-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 11px; background: var(--surface2); cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono); font-size: 0.62rem; color: var(--text2); letter-spacing: .5px;
+  transition: background .15s;
+}
+.ports-head:hover { background: var(--surface3); }
+.ph-title { display: flex; align-items: center; gap: 8px; }
+.ph-count { font-weight: 700; }
+.ph-right { display: flex; align-items: center; gap: 8px; }
+.ph-risk { padding: 1px 6px; border-radius: 3px; font-weight: 700; font-size: 0.54rem; }
+.ph-toggle { color: var(--text4); font-size: 0.65rem; transition: transform .2s; }
+.ph-toggle.open { transform: rotate(90deg); }
+.ports-body { display: none; }
+.ports-body.open { display: block; }
+.port-row { display: grid; grid-template-columns: 50px 90px 1fr 56px; gap: 6px; align-items: center; padding: 5px 11px; border-bottom: 1px solid var(--border); font-family: var(--mono); font-size: 0.6rem; }
+.port-row:last-child { border-bottom: none; }
+.port-row:hover { background: var(--surface2); }
+.p-num  { font-weight: 700; color: var(--accent); }
+.p-svc  { font-weight: 600; color: var(--text); }
+.p-desc { color: var(--text3); }
+.p-risk { text-align: right; }
+.risk-pill { padding: 1px 5px; border-radius: 3px; font-size: 0.52rem; font-weight: 700; }
+.risk-CRITICAL { background: #fff1f2; color: #be123c; }
+.risk-HIGH     { background: var(--red-soft); color: var(--red); }
+.risk-MEDIUM   { background: #fffbeb; color: var(--amber); }
+.risk-LOW      { background: var(--green-soft); color: var(--green); }
+.banner-row { padding: 3px 11px 4px 60px; background: var(--surface3); border-bottom: 1px solid var(--border); font-family: var(--mono); font-size: 0.54rem; color: var(--text3); word-break: break-all; }
+.no-ports-note { padding: 10px 11px; font-family: var(--mono); font-size: 0.6rem; color: var(--text4); text-align: center; }
+
+/* ── AUDIT ───────────────────────────────────── */
+.audit-wrap { margin-bottom: 9px; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; }
+.audit-row { display: flex; gap: 8px; align-items: flex-start; padding: 6px 11px; border-bottom: 1px solid var(--border); font-size: 0.7rem; color: var(--text2); }
+.audit-row:last-child { border-bottom: none; }
+.audit-lv { font-family: var(--mono); font-size: 0.52rem; font-weight: 700; padding: 1px 5px; border-radius: 3px; flex-shrink: 0; margin-top: 2px; }
+.lv-CRITICAL { background: #fff1f2; color: #be123c; }
+.lv-HIGH     { background: var(--red-soft); color: var(--red); }
+.lv-MEDIUM   { background: #fffbeb; color: var(--amber); }
+.lv-LOW      { background: var(--green-soft); color: var(--green); }
+.lv-INFO     { background: var(--accent-soft); color: var(--accent); }
+
+/* Chips */
+.chips { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 9px; }
+.chip { font-family: var(--mono); font-size: 0.52rem; padding: 2px 7px; border-radius: 20px; background: var(--surface3); color: var(--text3); border: 1px solid var(--border); cursor: default; }
+.chip:hover { background: var(--surface2); color: var(--text2); }
+
+/* Card footer */
+.card-foot { display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid var(--border); }
+.foot-q { font-family: var(--mono); font-size: 0.58rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+.card.excellent .foot-q { color: var(--green); }
+.card.good      .foot-q { color: var(--cyan); }
+.card.fair      .foot-q { color: var(--amber); }
+.card.poor      .foot-q { color: var(--red); }
+.foot-mac { font-family: var(--mono); font-size: 0.52rem; color: var(--text4); }
+
+/* Empty */
+.empty { text-align: center; padding: 50px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+.empty p { font-family: var(--mono); font-size: 0.75rem; color: var(--text4); letter-spacing: 3px; }
+.empty small { display: block; margin-top: 8px; font-family: var(--mono); font-size: 0.6rem; color: var(--text4); }
+
+/* Flash */
+@keyframes fl { 0%{opacity:.3}100%{opacity:0} }
+.flash { position: fixed; inset: 0; background: rgba(37,99,235,.06); z-index: 9999; pointer-events: none; animation: fl .5s ease forwards; }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">📡</div>
+    <div>
+      <div class="logo-text">Net<span>Scan</span></div>
+      <span class="logo-sub">WiFi Cyber Intelligence v4</span>
+    </div>
+  </div>
+  <div class="topbar-sep"></div>
+  <span class="t-stat">Networks <b id="cnt">—</b></span>
+  <div class="topbar-sep"></div>
+  <span class="t-stat">Scan <b id="scn">—</b></span>
+  <div class="topbar-sep"></div>
+  <span class="t-stat">Updated <b id="upd">—</b></span>
+  <div class="topbar-right">
+    <span class="srv-badge" id="srv">⬤ Connecting…</span>
+    <div class="live-badge"><div class="pulse"></div>LIVE</div>
+  </div>
+</div>
+
+<div class="app">
+<!-- CONTROLS -->
+<div class="ctrl-bar">
+  <button class="btn-scan" id="scanBtn" onclick="manualScan()">
+    <span class="spin-icon">⟳</span> SCAN NOW
+  </button>
+  <div class="auto-wrap" onclick="toggleAuto()" id="autoWrap">
+    <div class="sw-track on" id="swTrack"><div class="sw-knob"></div></div>
+    <span id="autoLbl">AUTO SCAN</span>
+  </div>
+  <div class="v-sep"></div>
+  <span class="t-stat">Gateway <b id="gwip" style="color:var(--accent)">—</b></span>
+  <span class="t-stat">Your IP <b id="myip" style="color:var(--green)">—</b></span>
+  <div class="cd-wrap">
+    <div class="cd-bar-bg"><div class="cd-bar-fg" id="nbar" style="width:100%"></div></div>
+    <span id="cd-val">15s</span>
+  </div>
+</div>
+
+<!-- HOST DISCOVERY BANNER -->
+<div class="host-banner" id="hostBanner" style="display:none">
+  <div class="hb-item"><span class="hb-lbl">🌐 Gateway</span><span class="hb-val" id="hb-gw">—</span></div>
+  <div class="hb-item"><span class="hb-lbl">💻 Your IP</span><span class="hb-val" id="hb-me">—</span></div>
+  <div class="hb-item"><span class="hb-lbl">🔍 Hosts found</span><span class="hb-val" id="hb-hosts">—</span></div>
+  <div class="hb-item"><span class="hb-lbl">🔌 Ports scanned</span><span class="hb-val" id="hb-ports">—</span></div>
+</div>
+
+<!-- ALERTS -->
+<div class="err-bar" id="err"></div>
+<div class="guide" id="guide">
+  <h3>⚠ SERVER NOT RUNNING</h3>
+  <ol>
+    <li>Open terminal in project folder</li>
+    <li>Run: <code>sudo python3 wifi_server_v4.py</code></li>
+    <li>IP discovery takes ~30–60s on first run</li>
+    <li>Dependencies: <code>sudo apt install nmap network-manager iproute2</code></li>
+  </ol>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+  <!-- LEFT PANELS -->
+  <div>
+    <div class="panel">
+      <div class="panel-head"><div class="ph-dot"></div>Radar Sweep</div>
+      <div class="panel-body" style="padding:10px">
+        <div class="radar-ring"><canvas id="rc"></canvas></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div class="ph-dot"></div>Network Legend</div>
+      <div class="panel-body" style="padding:8px 12px">
+        <div id="rleg"><div class="leg-row"><div class="leg-dot" style="background:var(--border)"></div><span class="leg-ssid" style="color:var(--text4)">Waiting…</span></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div class="ph-dot"></div>Channel Congestion</div>
+      <div class="panel-body">
+        <div class="ch-row" id="chanGrid"><span style="font-family:var(--mono);font-size:.6rem;color:var(--text4)">Loading…</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARDS -->
+  <div id="grid">
+    <div class="empty"><p>WAITING FOR SERVER</p><small>sudo python3 wifi_server_v4.py</small></div>
+  </div>
+</div>
+</div><!-- .app -->
+
+<script>
+const API      = 'http://localhost:8765/wifi';
+const HOSTS_API= 'http://localhost:8765/hosts';
+const SCAN_INT = 15000;
+
+const OUI = {
+  '14:cf:92':'TP-Link','50:c7:bf':'TP-Link','c0:25:e9':'TP-Link','d8:0d:17':'TP-Link','f8:1a:67':'TP-Link','ac:84:c9':'TP-Link','b0:48:7a':'TP-Link','80:89:17':'TP-Link','e8:de:27':'TP-Link','18:d6:c7':'TP-Link',
+  '00:09:5b':'Netgear','20:4e:7f':'Netgear','84:1b:5e':'Netgear','a0:21:b7':'Netgear','c4:04:15':'Netgear','e0:46:9a':'Netgear',
+  '00:0b:be':'Cisco','a0:93:51':'Cisco','68:86:a7':'Cisco',
+  '00:11:2f':'ASUS','10:bf:48':'ASUS','2c:fd:a1':'ASUS','ac:9e:17':'ASUS','bc:ae:c5':'ASUS','f0:79:59':'ASUS','1c:87:2c':'ASUS',
+  '00:05:5d':'D-Link','1c:7e:e5':'D-Link','28:10:7b':'D-Link',
+  '00:03:93':'Apple','00:17:f2':'Apple','04:0c:ce':'Apple',
+  '14:49:e0':'Samsung','28:98:7b':'Samsung','34:c3:ac':'Samsung',
+  '00:18:82':'Huawei','14:9f:e8':'Huawei','24:09:95':'Huawei',
+  '04:cf:8c':'Xiaomi','14:f6:5a':'Xiaomi','58:44:98':'Xiaomi','68:df:dd':'Xiaomi',
+  'c0:3a:fa':'Jio','8c:fd:f0':'Jio','e4:ab:89':'Jio',
+  '24:0a:c4':'Espressif','30:ae:a4':'Espressif','84:0d:8e':'Espressif',
+  'a4:c3:f0':'Intel','f8:16:54':'Intel','84:3a:4b':'Intel',
+};
+const CC = {excellent:'#059669',good:'#0891b2',fair:'#d97706',poor:'#dc2626'};
+const CL = {excellent:'▲ Excellent',good:'◆ Good',fair:'▼ Fair',poor:'✕ Poor'};
+const cc = cls => CC[cls]||'#059669';
+
+function vendor(b){ return OUI[(b||'').toLowerCase().substring(0,8)]||'Unknown'; }
+function bw(rate,fghz){ const m=parseFloat(rate); if(isNaN(m)) return '?'; if(fghz>=6) return m>=2400?'160MHz':m>=1200?'80MHz':'40MHz'; if(fghz>=5) return m>=1733?'160MHz':m>=867?'80MHz':m>=300?'40MHz':'20MHz'; return m>=144?'40MHz':'20MHz'; }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function ago(ts){ const s=Math.round(Date.now()/1000-ts); return s<2?'just now':s<60?s+'s ago':Math.round(s/60)+'m ago'; }
+function fmtD(d){ return d?`${d.value}<sub>${d.unit}</sub>`:'?'; }
+function fontOf(b){ const n=[...(b||'').replace(/:/g,'')].reduce((a,c)=>a+c.charCodeAt(0),0)%6; return ['font-family:var(--head)','font-family:Georgia,serif','font-family:var(--mono);font-size:.9rem','font-family:Trebuchet MS,sans-serif','font-family:Palatino,serif','font-family:var(--sans);font-weight:600'][n]; }
+
+const hist={},HMAX=40;
+function pushH(b,d){ if(!hist[b])hist[b]=[]; hist[b].push({ts:Date.now(),dbm:d}); if(hist[b].length>HMAX)hist[b].shift(); }
+
+/* RADAR */
+const rc=document.getElementById('rc'); const rctx=rc.getContext('2d');
+let sweep=0,rdots=[],amap={};
+function szRC(){ const p=rc.parentElement,s=p.offsetWidth; rc.width=s;rc.height=s; }
+szRC(); window.addEventListener('resize',szRC);
+function drawRadar(){
+  const W=rc.width,H=rc.height,cx=W/2,cy=H/2,R=Math.min(cx,cy)-2;
+  rctx.clearRect(0,0,W,H);
+  rctx.beginPath();rctx.arc(cx,cy,R,0,Math.PI*2);rctx.fillStyle='#e8ecf1';rctx.fill();
+  [.25,.5,.75,1].forEach((f,i)=>{ rctx.beginPath();rctx.arc(cx,cy,R*f,0,Math.PI*2);rctx.strokeStyle=i===3?'#d1d5db':`rgba(156,163,175,${.2+i*.1})`;rctx.lineWidth=1;rctx.stroke();if(i<3){rctx.fillStyle='rgba(107,114,128,.5)';rctx.font=`${Math.max(7,W*.024)}px DM Mono,monospace`;rctx.fillText(Math.round(f*100)+'m',cx+R*f+3,cy-3);} });
+  rctx.strokeStyle='rgba(156,163,175,.35)';rctx.lineWidth=1;
+  rctx.beginPath();rctx.moveTo(cx-R,cy);rctx.lineTo(cx+R,cy);rctx.stroke();
+  rctx.beginPath();rctx.moveTo(cx,cy-R);rctx.lineTo(cx,cy+R);rctx.stroke();
+  const trail=Math.PI*.5,steps=32;
+  for(let i=0;i<steps;i++){const a0=sweep-trail*((steps-i)/steps),a1=sweep-trail*((steps-i-1)/steps);rctx.beginPath();rctx.moveTo(cx,cy);rctx.arc(cx,cy,R,a0,a1);rctx.closePath();rctx.fillStyle=`rgba(37,99,235,${(i/steps)*.13})`;rctx.fill();}
+  rctx.beginPath();rctx.moveTo(cx,cy);rctx.lineTo(cx+Math.cos(sweep)*R,cy+Math.sin(sweep)*R);rctx.strokeStyle='rgba(37,99,235,.65)';rctx.lineWidth=1.5;rctx.stroke();
+  rdots.forEach(d=>{const dx=cx+Math.cos(d.angle)*d.dn*R*.9,dy=cy+Math.sin(d.angle)*d.dn*R*.9,col=cc(d.cls),diff=((sweep-d.angle)%(Math.PI*2)+Math.PI*2)%(Math.PI*2),fresh=Math.max(0,1-diff/(Math.PI*1.1)),glow=.2+fresh*.8;rctx.beginPath();rctx.arc(dx,dy,7,0,Math.PI*2);rctx.fillStyle=col+'18';rctx.fill();rctx.beginPath();rctx.arc(dx,dy,3.5,0,Math.PI*2);rctx.fillStyle=col;rctx.globalAlpha=Math.min(1,glow+.3);rctx.fill();rctx.globalAlpha=1;if(glow>.5){rctx.fillStyle=col;rctx.font=`${Math.max(7,W*.024)}px DM Mono,monospace`;rctx.fillText((d.ssid||'?').substring(0,10),Math.min(W-55,Math.max(0,dx+6)),Math.max(10,dy-4));}});
+  rctx.beginPath();rctx.arc(cx,cy,5,0,Math.PI*2);rctx.fillStyle='#2563eb';rctx.fill();
+  rctx.beginPath();rctx.arc(cx,cy,10,0,Math.PI*2);rctx.fillStyle='rgba(37,99,235,.12)';rctx.fill();
+  rctx.beginPath();rctx.arc(cx,cy,R,0,Math.PI*2);rctx.strokeStyle='#d1d5db';rctx.lineWidth=1.5;rctx.stroke();
+}
+function radarLoop(){ sweep=(sweep+.016)%(Math.PI*2);drawRadar();requestAnimationFrame(radarLoop); }
+radarLoop();
+function updateDots(nets){ rdots=nets.map(n=>{ if(amap[n.bssid]===undefined){const h=[...(n.bssid||'').replace(/:/g,'')].reduce((a,c)=>a+c.charCodeAt(0),0);amap[n.bssid]=((h*137.508)%360)*Math.PI/180;} return{bssid:n.bssid,angle:amap[n.bssid],dn:Math.min(1,Math.max(.06,(n.distance?.raw_m??40)/100)),cls:n.signal_class||'poor',ssid:n.ssid||'?'}; }); }
+function updateLegend(nets){ document.getElementById('rleg').innerHTML=nets.slice(0,8).map(n=>`<div class="leg-row"><div class="leg-dot" style="background:${cc(n.signal_class)}"></div><span class="leg-ssid">${esc(n.ssid||'?')}</span><span class="leg-d">${n.distance?n.distance.value+n.distance.unit:'?'}</span></div>`).join(''); }
+function updateChannels(cm){ if(!cm||!Object.keys(cm).length)return; document.getElementById('chanGrid').innerHTML=Object.entries(cm).sort((a,b)=>parseInt(a[0])-parseInt(b[0])).map(([ch,i])=>`<div class="ch-chip ${i.count>=4?'ch-jam':i.count>=2?'ch-mid':'ch-ok'}" title="${i.band}·${i.count}net${i.count>1?'s':''}">CH${ch} <span style="opacity:.7">${i.count}×</span></div>`).join(''); }
+
+/* SPARKLINE */
+function drawSpark(cv,bssid,cls){ const h=hist[bssid];if(!h||h.length<2)return;const W=cv.offsetWidth||200;cv.width=W;cv.height=34;const ctx=cv.getContext('2d');ctx.clearRect(0,0,W,34);ctx.fillStyle='#e8ecf1';ctx.fillRect(0,0,W,34);[-50,-60,-70,-80].forEach(db=>{const y=34-((db-(-90))/60)*34;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.strokeStyle='rgba(156,163,175,.4)';ctx.lineWidth=1;ctx.stroke();});const pts=h.map((p,i)=>({x:(i/(h.length-1))*W,y:34-((p.dbm-(-90))/60)*34})),col=cc(cls),g=ctx.createLinearGradient(0,0,0,34);g.addColorStop(0,col+'35');g.addColorStop(1,col+'05');ctx.beginPath();ctx.moveTo(pts[0].x,34);ctx.lineTo(pts[0].x,pts[0].y);pts.forEach(p=>ctx.lineTo(p.x,p.y));ctx.lineTo(pts[pts.length-1].x,34);ctx.closePath();ctx.fillStyle=g;ctx.fill();ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);pts.forEach(p=>ctx.lineTo(p.x,p.y));ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.stroke();const lp=pts[pts.length-1];ctx.beginPath();ctx.arc(lp.x,lp.y,2.5,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();const dbs=h.map(p=>p.dbm);ctx.fillStyle='rgba(107,114,128,.6)';ctx.font='7px DM Mono,monospace';ctx.fillText(Math.max(...dbs)+'dBm',2,9);ctx.fillText(Math.min(...dbs)+'dBm',2,32); }
+
+/* PORT HTML */
+function portsHTML(ports,id){
+  if(ports===undefined||ports===null) return `<div class="ports-wrap"><div class="ports-head"><span class="ph-title">🔌 Open Ports</span><span class="ph-risk risk-pill risk-LOW" style="background:var(--surface3);color:var(--text4);border:1px solid var(--border)">SCANNING…</span></div></div>`;
+  const count=ports.length,crit=ports.filter(p=>p.risk==='CRITICAL').length,high=ports.filter(p=>p.risk==='HIGH').length;
+  const riskCls=crit>0?'risk-CRITICAL':high>0?'risk-HIGH':count>3?'risk-MEDIUM':'risk-LOW';
+  const riskTxt=crit>0?`${crit} CRITICAL`:high>0?`${high} HIGH`:count>0?`${count} OPEN`:'CLEAN';
+  const rows=ports.map(p=>`<div class="port-row"><span class="p-num">${p.port}</span><span class="p-svc">${esc(p.service)}</span><span class="p-desc">${esc(p.desc)}</span><span class="p-risk"><span class="risk-pill risk-${p.risk}">${p.risk[0]}</span></span></div>${p.banner?`<div class="banner-row">↳ ${esc(p.banner)}</div>`:''}`).join('');
+  return `<div class="ports-wrap">
+    <div class="ports-head" onclick="tglPorts('${id}')">
+      <span class="ph-title">🔌 Open Ports <span class="ph-count">${count>0?`(${count})`:''}</span></span>
+      <span class="ph-right"><span class="ph-risk risk-pill risk-${riskCls}">${riskTxt}</span><span class="ph-toggle" id="ptg-${id}">▶</span></span>
+    </div>
+    <div class="ports-body" id="pb-${id}">${count?rows:`<div class="no-ports-note">No open ports detected on this host</div>`}</div>
+  </div>`;
+}
+function tglPorts(id){ document.getElementById('pb-'+id)?.classList.toggle('open'); document.getElementById('ptg-'+id)?.classList.toggle('open'); }
+
+/* AUDIT HTML */
+function auditHTML(audit){ if(!audit?.length) return ''; return `<div class="audit-wrap">${audit.map(f=>`<div class="audit-row"><span class="audit-lv lv-${esc(f.level)}">${esc(f.level)}</span><span>${esc(f.msg)}</span></div>`).join('')}</div>`; }
+
+/* BUILD CARD */
+function buildCard(n,delay){
+  const cls=n.signal_class||'poor',pct=n.percent||0,conf=n.distance?.confidence??0;
+  const confC=conf>70?'var(--green)':conf>45?'var(--amber)':'var(--red)';
+  const id=(n.bssid||'').replace(/:/g,'_');
+  const fghz=n.freq_ghz||2.4,bwStr=bw(n.rate,fghz),ven=vendor(n.bssid);
+  const sec=(n.security||'').toUpperCase();
+  const secCls=sec.includes('WPA3')?'b-wpa3':sec==='OPEN'||!sec?'b-open':'b-sec';
+  const risk=n.risk_score||0;
+  const riskBadge=risk>=50?`<span class="badge b-risk-c">⚠ RISK ${risk}</span>`:risk>=20?`<span class="badge b-risk-h">△ RISK ${risk}</span>`:n.open_ports?.length?`<span class="badge b-risk-l">✓ ${n.open_ports.length} ports</span>`:'';
+  const ip=n.ip||'',host=n.hostname||'',os=n.os_guess||'';
+  const ishid=n.is_hidden;
+  const ssidClass=ishid&&n.ssid&&n.ssid!=='<Hidden>'?'ssid probed':ishid?'ssid hidden':'ssid';
+  const fst=fontOf(n.bssid);
+
+  const card=document.createElement('div');
+  card.className=`card ${cls} ${n.active?'connected':''}`;
+  card.style.animationDelay=delay+'ms';
+  card.dataset.bssid=n.bssid||'';
+
+  card.innerHTML=`<div class="signal-stripe"></div><div class="card-body">
+  <div class="card-hdr">
+    <div class="ssid-wrap">
+      <div class="${ssidClass}" style="${fst}">${esc(n.ssid||'<Hidden>')}${ishid&&n.ssid&&n.ssid!=='<Hidden>'?' 🔍':ishid?' 👁':''}</div>
+      <div class="ssid-sub">CH ${esc(n.channel||'?')} · ${esc(n.frequency||'?')} · ${esc(n.rate||'?')}${ishid?' · HIDDEN':''}</div>
+    </div>
+    <div class="badges">
+      ${n.active?'<span class="badge b-conn">● CONNECTED</span>':''}
+      ${riskBadge}
+      <span class="badge ${secCls}">${esc(sec||'OPEN')}</span>
+      <span class="badge b-freq">${esc(n.frequency||'?')}</span>
+      <span class="badge b-bw">${esc(bwStr)}</span>
+      ${ishid?'<span class="badge b-hidden">HIDDEN</span>':''}
+    </div>
+  </div>
+
+  <div class="info-row">
+    <div class="itag"><span class="l">MAC</span>&nbsp;<span class="v">${esc(n.bssid||'—')}</span></div>
+    <span class="isep">·</span>
+    <div class="itag"><span class="l">Vendor</span>&nbsp;<span class="v">📡 ${esc(ven)}</span></div>
+    ${ip?`<span class="isep">·</span><div class="itag"><span class="l">IP</span>&nbsp;<span class="v ip">🌐 ${esc(ip)}</span></div>`:'<span class="isep">·</span><span class="no-ip-note">IP: scanning…</span>'}
+    ${host?`<span class="isep">·</span><div class="itag"><span class="l">Host</span>&nbsp;<span class="v host">${esc(host)}</span></div>`:''}
+    ${os&&os!=='Unknown'&&os!=='Scanning…'?`<span class="isep">·</span><span class="os-tag">🖥 ${esc(os)}</span>`:''}
+  </div>
+
+  <div class="metrics">
+    <div class="mbox"><label>Signal</label>
+      <div class="mval" id="vs-${id}">${n.dbm}<sub>dBm</sub></div>
+      <div class="mbar"><div class="mbar-f" style="width:0%" data-t="${pct}" data-k="s"></div></div>
+      <div class="mbar-lbl"><span>-90</span><span id="vp-${id}">${pct}%</span><span>-30</span></div>
+    </div>
+    <div class="mbox"><label>Distance</label>
+      <div class="mval" id="vd-${id}">${fmtD(n.distance)}</div>
+      <div class="mbar"><div class="mbar-f" style="width:0%" data-t="${Math.max(5,100-pct)}" data-k="d"></div></div>
+      <div class="mbar-lbl"><span>Near</span><span>${n.distance?n.distance.value+n.distance.unit:'?'}</span><span>Far</span></div>
+    </div>
+    <div class="mbox"><label>Confidence</label>
+      <div class="mval" id="vc-${id}" style="color:${confC}">${conf}<sub>%</sub></div>
+      <div class="mbar"><div class="mbar-f" style="width:0%;background:${confC}" data-t="${conf}" data-k="c"></div></div>
+      <div class="mbar-lbl" style="justify-content:flex-end"><span style="color:${confC}">${conf>70?'HIGH':conf>45?'MED':'LOW'}</span></div>
+    </div>
+  </div>
+
+  <div class="spark-wrap">
+    <div class="spark-lbl">Signal History <em id="sr-${id}" style="font-style:normal;font-size:.48rem;color:var(--text4)"></em></div>
+    <canvas class="spark-cv" data-bssid="${esc(n.bssid||'')}"></canvas>
+  </div>
+
+  ${portsHTML(n.open_ports, id)}
+  ${auditHTML(n.security_audit)}
+
+  ${n.distance?`<div class="chips">
+    <span class="chip">TX ${n.distance.tx_power_dbm}dBm</span>
+    <span class="chip">n=${n.distance.path_loss_exp}</span>
+    <span class="chip">Smth ${n.distance.smoothed_dbm}dBm</span>
+    <span class="chip">LDPL-v2</span>
+  </div>`:''}
+
+  <div class="card-foot">
+    <span class="foot-q">${CL[cls]||''}</span>
+    <span class="foot-mac">${esc(n.bssid||'')}</span>
+  </div>
+</div>`;
+  return card;
+}
+
+/* RENDER */
+function render(nets){
+  const grid=document.getElementById('grid');
+  const ex={}; grid.querySelectorAll('.card[data-bssid]').forEach(c=>ex[c.dataset.bssid]=c);
+  const nb=new Set(nets.map(n=>n.bssid));
+  Object.keys(ex).forEach(b=>{ if(!nb.has(b)) ex[b].remove(); });
+  nets.forEach((n,i)=>{
+    pushH(n.bssid,n.dbm);
+    const cls=n.signal_class||'poor',pct=n.percent||0,conf=n.distance?.confidence??0;
+    const confC=conf>70?'var(--green)':conf>45?'var(--amber)':'var(--red)';
+    const id=(n.bssid||'').replace(/:/g,'_');
+    const old=ex[n.bssid];
+    if(old){
+      old.className=`card ${cls} ${n.active?'connected':''}`;
+      const vs=old.querySelector(`#vs-${id}`);if(vs)vs.innerHTML=`${n.dbm}<sub>dBm</sub>`;
+      const vd=old.querySelector(`#vd-${id}`);if(vd)vd.innerHTML=fmtD(n.distance);
+      const vc=old.querySelector(`#vc-${id}`);if(vc){vc.innerHTML=`${conf}<sub>%</sub>`;vc.style.color=confC;}
+      const vp=old.querySelector(`#vp-${id}`);if(vp)vp.textContent=pct+'%';
+      old.querySelectorAll('.mbar-f').forEach(b=>{ if(b.dataset.k==='s')b.dataset.t=pct; if(b.dataset.k==='d')b.dataset.t=Math.max(5,100-pct); if(b.dataset.k==='c'){b.dataset.t=conf;b.style.background=confC;} });
+      // Update info row when IP arrives
+      if(n.ip){ const ir=old.querySelector('.info-row');if(ir){const ven=vendor(n.bssid),os=n.os_guess||'',host=n.hostname||'';ir.innerHTML=`<div class="itag"><span class="l">MAC</span>&nbsp;<span class="v">${esc(n.bssid||'')}</span></div><span class="isep">·</span><div class="itag"><span class="l">Vendor</span>&nbsp;<span class="v">📡 ${esc(ven)}</span></div><span class="isep">·</span><div class="itag"><span class="l">IP</span>&nbsp;<span class="v ip">🌐 ${esc(n.ip)}</span></div>${host?`<span class="isep">·</span><div class="itag"><span class="l">Host</span>&nbsp;<span class="v host">${esc(host)}</span></div>`:''}${os&&os!=='Unknown'?`<span class="isep">·</span><span class="os-tag">🖥 ${esc(os)}</span>`:''}`; } }
+      // Update ports
+      const pw=old.querySelector('.ports-wrap');if(pw){ const newPW=document.createElement('div');newPW.innerHTML=portsHTML(n.open_ports,id);const np=newPW.querySelector('.ports-wrap');if(np)pw.replaceWith(np); }
+      const h=hist[n.bssid];if(h&&h.length>=2){const dbs=h.map(p=>p.dbm);const sr=old.querySelector(`#sr-${id}`);if(sr)sr.textContent=`${Math.min(...dbs)}→${Math.max(...dbs)}dBm`;}
+      const sp=old.querySelector('.spark-cv');if(sp)drawSpark(sp,n.bssid,cls);
+    } else {
+      const c=buildCard(n,i*55);grid.appendChild(c);
+    }
+  });
+  setTimeout(()=>{
+    grid.querySelectorAll('.mbar-f[data-t]').forEach(b=>b.style.width=b.dataset.t+'%');
+    grid.querySelectorAll('.spark-cv[data-bssid]').forEach(c=>{ const card=c.closest('.card');drawSpark(c,c.dataset.bssid,(card?.className||'').match(/excellent|good|fair|poor/)?.[0]||'poor'); });
+  },100);
+}
+
+/* COUNTDOWN & AUTO SCAN */
+let cdT=null,cdV=SCAN_INT;
+function startCD(){ if(cdT)clearInterval(cdT);cdV=SCAN_INT;const bar=document.getElementById('nbar'),val=document.getElementById('cd-val');cdT=setInterval(()=>{cdV=Math.max(0,cdV-200);bar.style.width=((cdV/SCAN_INT)*100)+'%';val.textContent=Math.ceil(cdV/1000)+'s';},200); }
+let autoOn=true,autoTmr=null;
+function schedAuto(){ if(autoTmr)clearTimeout(autoTmr);if(!autoOn)return;autoTmr=setTimeout(()=>{fetchData();schedAuto();},SCAN_INT); }
+function toggleAuto(){ autoOn=!autoOn;const t=document.getElementById('swTrack'),l=document.getElementById('autoLbl');if(autoOn){t.classList.add('on');l.textContent='AUTO SCAN';schedAuto();startCD();}else{t.classList.remove('on');l.textContent='AUTO OFF';if(autoTmr)clearTimeout(autoTmr);if(cdT)clearInterval(cdT);document.getElementById('nbar').style.width='0%';document.getElementById('cd-val').textContent='—';} }
+async function manualScan(){ const btn=document.getElementById('scanBtn');btn.disabled=true;btn.classList.add('scanning');btn.innerHTML='<span class="spin-icon">⟳</span> SCANNING…';const fl=document.createElement('div');fl.className='flash';document.body.appendChild(fl);setTimeout(()=>fl.remove(),500);await fetchData();if(autoOn){if(autoTmr)clearTimeout(autoTmr);schedAuto();startCD();}btn.disabled=false;btn.classList.remove('scanning');btn.innerHTML='<span class="spin-icon">⟳</span> SCAN NOW'; }
+
+/* FETCH & UPDATE HOST BANNER */
+let online=false;
+async function fetchHosts(){ try{ const r=await fetch(HOSTS_API,{cache:'no-store'});if(!r.ok)return;const d=await r.json();const banner=document.getElementById('hostBanner');if(d.gateway_ip||d.local_ip){banner.style.display='flex';document.getElementById('hb-gw').textContent=d.gateway_ip||'—';document.getElementById('hb-me').textContent=d.local_ip||'—';const hosts=Object.keys(d.hosts||{});document.getElementById('hb-hosts').textContent=hosts.length;const totalPorts=hosts.reduce((a,ip)=>(a+(d.hosts[ip]?.ports?.length||0)),0);document.getElementById('hb-ports').textContent=totalPorts;} }catch(e){} }
+async function fetchData(){
+  try{
+    const res=await fetch(API,{cache:'no-store'});if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    if(!online){online=true;document.getElementById('guide').style.display='none';}
+    document.getElementById('srv').textContent='⬤ Online';document.getElementById('srv').style.color='var(--green)';
+    document.getElementById('err').style.display='none';
+    if(data.error){document.getElementById('err').style.display='block';document.getElementById('err').textContent='⚠ '+data.error;}
+    document.getElementById('cnt').textContent=data.network_count??0;
+    document.getElementById('scn').textContent='#'+(data.scan_count??'?');
+    document.getElementById('upd').textContent=ago(data.timestamp);
+    window._lts=data.timestamp;
+    if(data.gateway_ip){document.getElementById('gwip').textContent=data.gateway_ip;document.getElementById('hb-gw').textContent=data.gateway_ip;}
+    if(data.local_ip){document.getElementById('myip').textContent=data.local_ip;document.getElementById('hb-me').textContent=data.local_ip;}
+    if(data.channel_map)updateChannels(data.channel_map);
+    if(data.networks?.length>0){render(data.networks);updateDots(data.networks);updateLegend(data.networks);}
+    else{document.getElementById('grid').innerHTML='<div class="empty"><p>NO NETWORKS FOUND</p><small>Check WiFi adapter is active</small></div>';}
+    if(autoOn)startCD();
+    fetchHosts();
+  }catch(e){
+    online=false;document.getElementById('srv').textContent='⬤ Offline';document.getElementById('srv').style.color='var(--red)';
+    document.getElementById('guide').style.display='block';
+    const g=document.getElementById('grid');if(!g.querySelector('.card'))g.innerHTML='<div class="empty"><p>WAITING FOR SERVER</p><small>sudo python3 wifi_server_v4.py</small></div>';
+  }
+}
+setInterval(()=>{ if(window._lts)document.getElementById('upd').textContent=ago(window._lts); },4000);
+setInterval(fetchHosts, 20000);
+fetchData(); schedAuto(); startCD();
+</script>
+</body>
+</html>

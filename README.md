@@ -28,6 +28,24 @@ port-scans each device with risk classification.
 
 ---
 
+---
+
+## 📸 Screenshots
+
+### Live Dashboard
+
+![NetScan WiFi dashboard with radar sweep, network cards, and signal metrics](screenshots/dashboard.png)
+
+### Server Startup
+
+![NetScan server starting up and showing first WiFi scan](screenshots/server1.png)
+
+### Server Running — Live Scan Output
+
+![NetScan server running with live scan cycles and host discovery](screenshots/server2.png)
+
+---
+
 ## 🧠 How IP Discovery Works (the v4 fix)
 
 Earlier versions tried to match an AP's **BSSID** (its wireless radio MAC)

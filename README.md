@@ -5,10 +5,7 @@ access points, estimates physical distance using an LDPL-v2 signal propagation
 model, resolves the connected router's IP, sweeps the LAN for live hosts, and
 port-scans each device with risk classification.
 
-![Status](https://img.shields.io/badge/status-active-brightgreen)
-![Python](https://img.shields.io/badge/python-3.10%2B-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
-![Platform](https://img.shields.io/badge/platform-Linux-lightgrey)
+
 
 ---
 
